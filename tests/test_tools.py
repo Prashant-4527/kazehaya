@@ -33,3 +33,14 @@ def test_bash_echo():
 
 def test_bash_exit_code():
     assert tool.bash("exit 3").startswith("exit code: 3")
+
+
+
+def test_read_blocks_outside_path(tmp_path, monkeypatch):
+    project = tmp_path / "project"
+    project.mkdir()
+    (tmp_path / "secret.txt").write_text("TOP-SECRET", encoding="utf-8")
+    monkeypatch.chdir(project)
+    result = tool.read_file("../secret.txt")
+    assert result.startswith("Error")
+    assert "TOP-SECRET" not in result

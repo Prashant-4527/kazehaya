@@ -1,17 +1,17 @@
 """Alduin - A minimal CLI coding agent."""
 
 import os
+from pathlib import Path
 from typing import Any
 
 import anthropic
 import dotenv
 from rich.console import Console
-from pathlib import Path
+
 from alduin import llm, schema_converter, system_prompt, theme, tool, ui
 
 MAX_TOOL_ROUNDS = 15
 TOOLS_NEEDING_APPROVAL = {"bash"}
-
 
 
 def load_agents_md() -> str:
@@ -20,18 +20,20 @@ def load_agents_md() -> str:
         return ""
     return agents_file.read_text(encoding="utf-8")
 
+
 def execute_tool(console, name: str, tool_lookup, args: dict[str, Any]) -> str:
     ui.print_tool_request(console, name, args)
     if name in TOOLS_NEEDING_APPROVAL and not ui.confirm(console, args.get("command", "")):
         message = "Error: the user denied this command"
         ui.print_tool_error(console, name, message)
+        return message
 
     # Find request function
     tool_fn = tool_lookup.get(name)
 
     if tool_fn is None:
         error = f"Error: Unknown tool '{name}'"
-        ui.print_tool_error(console, error, name)
+        ui.print_tool_error(console, name, error)
         return error
 
     try:
@@ -55,7 +57,7 @@ def agent_loop(client: anthropic.Anthropic, console: Console) -> None:
 
     conversation: list[dict[str, Any]] = []
 
-    active_tools = [tool.read_file, tool.list_files, tool.edit_file]
+    active_tools = [tool.read_file, tool.list_files, tool.edit_file, tool.bash]
 
     tool_lookup = {fn.__name__: fn for fn in active_tools}
 
@@ -63,7 +65,7 @@ def agent_loop(client: anthropic.Anthropic, console: Console) -> None:
 
     memory = load_agents_md()
     full_prompt = system_prompt.get()
-    if memory: 
+    if memory:
         full_prompt += f"\n\n# Project instructions (AGENTS.md)\n{memory}"
         ui.print_debug(console, f"Loaded AGENTS.md ({len(memory)} characters)")
 
@@ -84,14 +86,20 @@ def agent_loop(client: anthropic.Anthropic, console: Console) -> None:
         ui.print_user_message(console, user_input)
 
         tool_rounds = 0
+        turn_start = len(conversation) - 1
         while True:
-            llm_response = llm.call(
-                client=client,
-                console=console,
-                system_prompt=full_prompt,
-                messages=conversation,
-                tool_schemas=tool_schemas,
-            )
+            try:
+                llm_response = llm.call(
+                    client=client,
+                    console=console,
+                    system_prompt=full_prompt,
+                    messages=conversation,
+                    tool_schemas=tool_schemas,
+                )
+            except anthropic.APIError as exc:
+                ui.print_error(console, f"LLM call failed: {exc}")
+                del conversation[turn_start:]
+                break
 
             conversation.append({"role": "assistant", "content": llm_response.content})
 
@@ -126,6 +134,7 @@ def main() -> None:
     Initializes console, checks API key, and starts the agent loop.
     """
 
+    dotenv.load_dotenv()
     console = Console(theme=theme.ALDUIN_THEME)
     ui.print_banner(console)
 
