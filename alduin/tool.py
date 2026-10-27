@@ -5,14 +5,36 @@ import sys
 from pathlib import Path
 
 
+def _inside_project(path: str) -> Path | None:
+    """Return the resolved path if it is inside the current folder, else None."""
+    resolved = Path(path).resolve()
+    if resolved.is_relative_to(Path.cwd().resolve()):
+        return resolved
+    return None
+
+
 def _shell_args(command: str) -> list[str]:
-    git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
-    if git_bash.exists():
-        return [str(git_bash), "-c", command]
-    return ["powershell", "-NoProfile", "-Command", command]
+    """Pick a shell that exists on this machine."""
+    if sys.platform == "win32":
+        git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
+        if git_bash.exists():
+            return [str(git_bash), "-c", command]
+        return ["powershell", "-NoProfile", "-Command", command]
+    return ["bash", "-c", command]
 
 
 def bash(command: str) -> str:
+    """Run a shell command in the project folder and return its output.
+
+    The user must approve every command before it runs. The command is stopped after 30 seconds
+    and the output is cut at 10,000 characters.
+
+    Args:
+        command: The shell command to run.
+
+    Returns:
+        The exit code followed by the combined stdout and stderr, or an error message.
+    """
 
     try:
         completed = subprocess.run(
@@ -24,7 +46,6 @@ def bash(command: str) -> str:
             timeout=30,
             cwd=Path.cwd(),
         )
-
     except subprocess.TimeoutExpired:
         return "Error: command timed out after 30 seconds"
 
@@ -44,10 +65,12 @@ def read_file(path: str) -> str:
         The contents of the file, or an error message if it fails.
     """
 
-    file_path = Path(path)
+    file_path = _inside_project(path)
+    if file_path is None:
+        return "Error: path is outside the project folder"
 
     if not file_path.is_file():
-        return f"Error: File not found: {path}"
+        return f"Error: file not found: {path}"
 
     return file_path.read_text(encoding="utf-8")
 
@@ -66,10 +89,9 @@ def edit_file(path: str, old_str: str, new_str: str) -> str:
         A success message, or an error message if it fails.
     """
 
-    file_path = Path(path).resolve()
-
-    if not file_path.is_relative_to(Path.cwd()):
-        return "Error: path is outside the project foler"
+    file_path = _inside_project(path)
+    if file_path is None:
+        return "Error: path is outside the project folder"
 
     if old_str == "":
         if file_path.exists() and file_path.read_text(encoding="utf-8") != "":
@@ -102,7 +124,9 @@ def list_files(path: str) -> str:
         A newline-separated list of file names, or an error message.
     """
 
-    p = Path(path)
+    p = _inside_project(path)
+    if p is None:
+        return "Error: path is outside the project folder"
     if not p.is_dir():
         return f"Error: not a directory: {path}"
 
@@ -112,35 +136,3 @@ def list_files(path: str) -> str:
 
     lines = [f"{item.name}/" if item.is_dir() else item.name for item in contents]
     return "\n".join(lines)
-
-
-def _inside_project(path: str) -> Path | None:
-    """Return the resolved path if it is inside the current folder, else None."""
-    resolved = Path(path).resolve()
-    if resolved.is_relative_to(Path.cwd().resolve()):
-        return resolved
-    return None
-
-
-def _shell_args(command: str) -> list[str]:
-    """Pick a shell that exists on this machine."""
-    if sys.platform == "win32":
-        git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
-        if git_bash.exists():
-            return [str(git_bash), "-c", command]
-        return ["powershell", "-NoProfile", "-Command", command]
-    return ["bash", "-c", command]
-
-
-def bash(command: str) -> str:
-    """Run a shell command in the project folder and return its output.
-
-    The user must approve every command before it runs. The command is stopped after 30 seconds
-    and the output is cut at 10,000 characters.
-
-    Args:
-        command: The shell command to run.
-
-    Returns:
-        The exit code followed by the combined stdout and stderr, or an error message.
-    """
