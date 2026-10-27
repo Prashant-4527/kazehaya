@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import anthropic
+from rich.console import Console
 
 from alduin import main
 
