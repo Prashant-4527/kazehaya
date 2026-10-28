@@ -37,7 +37,7 @@ ANTHROPIC_BASE_URL="http://127.0.0.1:11434"
 
 Ollama exposes an Anthropic-compatible endpoint, so the official `anthropic` client works unchanged. To use the real Claude API instead, put your key in `ANTHROPIC_API_KEY`, remove `ANTHROPIC_BASE_URL`, and change `MODEL` in `alduin/llm.py`.
 
-Run the tests with `uv run python -m pytest` (10 tests).
+Run the tests with `uv run python -m pytest` (11 tests).
 
 ## What I added on top of the workshop
 
