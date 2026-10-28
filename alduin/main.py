@@ -37,9 +37,12 @@ def execute_tool(console, name: str, tool_lookup, args: dict[str, Any]) -> str:
         return error
 
     try:
-        result = tool_fn(**args)
-        ui.print_tool_result(console, name, result)
-        return str(result)
+        result = str(tool_fn(**args))
+        if result.startswith("Error"):
+            ui.print_tool_error(console, name, result)
+        else:
+            ui.print_tool_result(console, name, result)
+        return result
 
     except Exception as e:
         error = f"Error executing tool '{name}': '{e}'"
@@ -148,5 +151,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    dotenv.load_dotenv()
     main()
