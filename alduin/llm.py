@@ -43,19 +43,18 @@ def call(
 
 
 if __name__ == "__main__":
-    import os
-
     import dotenv
 
     dotenv.load_dotenv()
 
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = anthropic.Anthropic()
 
     response = client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=100,
+        model=MODEL,
+        max_tokens=MAX_TOKENS,
         messages=[{"role": "user", "content": "Say hello in one sentence."}],
     )
 
-    print(f"Response: {response.content[0].text}")
-    print("✅ API key is working!")
+    reply = "".join(block.text for block in response.content if block.type == "text")
+    print(f"Response from {MODEL}: {reply}")
+    print("Model is reachable.")
