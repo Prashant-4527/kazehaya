@@ -1,7 +1,8 @@
+import io
+
 from rich.console import Console
 
 from alduin import main
-import io
 
 
 def test_denied_bash_does_not_run(monkeypatch):
@@ -15,7 +16,6 @@ def test_denied_bash_does_not_run(monkeypatch):
     result = main.execute_tool(Console(quiet=True), "bash", {"bash": bash}, {"command": "rm x"})
     assert result.startswith("Error")
     assert ran == []
-
 
 
 def test_tool_error_is_shown_as_error():

@@ -1,4 +1,4 @@
-# Project: kaoruko (alduin) CLI coding agent
+# Project: kazehaya (alduin) CLI coding agent
 
 - Source code is in the `alduin/` folder: `main.py` (agent loop), `tool.py` (tools), `llm.py` (model call), `ui.py` (terminal output).
 - Tests are in `tests/`. Run them with `uv run python -m pytest`.

@@ -24,7 +24,7 @@ You need Python 3.12, [uv](https://docs.astral.sh/uv/) and [Ollama](https://olla
 ```bash
 ollama pull qwen3:4b
 uv sync
-cp .env.sample .env        # then edit it, see below
+cp .env.sample .env        # default point to a local Ollama server.
 uv run python -m alduin.main
 ```
 
@@ -68,7 +68,7 @@ Things I observed while running the agent with a 4-billion-parameter model:
 
 `AGENTS.md` (project layout, "list the folder before reading", "edit, do not print code") is my response to failure 4. Result: [FILL: what happened with and without `AGENTS.md` on the same prompt, one or two sentences].
 
-[FILL optional: qwen3:4b vs qwen3:8b on the same 5 prompts, one small table].
+
 
 ## Limitations and next steps
 
